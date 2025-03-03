@@ -19,42 +19,20 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 import sys
-from pathlib import Path
-
-
-from browser_use.browser.browser import Browser, BrowserConfig
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import asyncio
 import logging
-from typing import List, Optional
-
-# Third-party imports
-from dotenv import load_dotenv
-
 # Browser automation imports
 from browser_use import Agent
-from browser_use.browser.browser import Browser, BrowserConfig
+from actions import controller
+from config import model, browser
 
-# Load environment variables from .env file (contains API keys)
-load_dotenv()
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Import only the controller from actions.py
-from actions import controller
-from config import modelLLM
-
-
-
 
 # Initialize the browser with security disabled for automation
-browser = Browser(
-	config=BrowserConfig(
-		disable_security=True,  # Disable security features that might block automation
-	)
-)
 
 
 async def main():
@@ -96,14 +74,11 @@ async def main():
 		# ground_task + '\n' + 'Meta',
 	]
 	
-	# Initialize the language model using OpenRouter as a proxy to OpenAI
-	model = modelLLM
-
 	# Create agents for each task
 	agents = []
 	for task in tasks:
 		# Each agent gets the task, language model, controller, and browser
-		agent = Agent(task=task, llm=model, controller=controller, browser=browser)
+		agent = Agent(task=task, llm=model, controller=controller, browser=browser )
 		agents.append(agent)
 
 	# Run all agents concurrently using asyncio
