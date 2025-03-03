@@ -15,7 +15,7 @@ This project is an application of the **[usebrowse](https://github.com/browser-u
 ## 📋 Requirements
 - Python 3.11+
 - [Playwright](https://playwright.dev/docs/intro) (used by usebrowse) for browser interactions
-- Openrouter or any other LLM API provider (like OpenAI) for AI agent capabilities
+- [OpenRouter](https://openrouter.ai/) or any other LLM API provider (like OpenAI) for AI agent capabilities
 - LinkedIn account
 
 ## 🛠️ Setup
