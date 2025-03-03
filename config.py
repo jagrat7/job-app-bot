@@ -7,7 +7,7 @@ from browser_use.browser.browser import Browser, BrowserConfig
 
 # Initialize the language model using OpenRouter as a proxy to OpenAI
 model = ChatOpenAI(
-    model='openai/gpt-4o-2024-11-20',  # Using GPT-4o model
+    model=os.getenv('AI_MODEL'), 
     base_url = "https://openrouter.ai/api/v1",  # OpenRouter API endpoint
     default_headers = {
         "HTTP-Referer": "https://www.usemynt.com/",

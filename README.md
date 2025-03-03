@@ -1,7 +1,7 @@
 # 🤖 LinkedIn Job Application Bot
 
 ## 🌟 Overview
-This project is an application of the **[usebrowse](https://github.com/browser-use/browser-use)** library, which is the main star of this implementation. It creates an automated LinkedIn job application bot powered by AI agents that helps users find and apply to Software Engineer positions on LinkedIn using the Easy Apply feature, streamlining the job application process.
+This project is an application of the **[usebrowse](https://github.com/browser-use/browser-use)** library. It creates an automated LinkedIn job application bot powered by AI agents that helps users find and apply to  positions based on your CV/resume on LinkedIn using the Easy Apply feature.
 
 > 🚧 **Note:** This project is still a work in progress. Features and functionality may change as development continues. Contributions and feedback are welcome! 🚧
 
@@ -14,13 +14,17 @@ This project is an application of the **[usebrowse](https://github.com/browser-u
 
 ## 📋 Requirements
 - Python 3.11+
-- [Playwright](https://playwright.dev/docs/intro) (used by usebrowse) for browser interactions
+- [Playwright](https://playwright.dev/python/docs/intro) (used by usebrowse) for browser interactions
 - [OpenRouter](https://openrouter.ai/) or any other LLM API provider (like OpenAI) for AI agent capabilities
 - LinkedIn account
 
 ## 🛠️ Setup
 
 ### 1. Install uv (if not already installed)
+
+[uv](https://github.com/astral-sh/uv) is on of the best things to happen to Python package management - it's the equivalent of npm for JavaScript. 
+
+**Alternatively, you can use any package manager of your choice like conda or Poetry. The dependencies are in the toml file.**
 
 First, install uv using the standalone installer:
 
@@ -33,20 +37,20 @@ Or on Windows:
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
-
-### 2. Clone the repository
-
-```bash
-git clone <repository-url>
-cd job-app-bot
-```
-### 3. Install Playwright browsers
+### 2. Install Playwright browsers
 
 ```bash
 uv pip install pytest-playwright
 ```
 ```bash
 playwright install
+```
+
+### 3. Clone the repository
+
+```bash
+git clone <repository-url>
+cd job-app-bot
 ```
 
 ### 4. Install dependencies
