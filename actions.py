@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 # Path to the resume/CV file
 CV = Path.cwd() / 'data' / 'Jagrat Rao-Software Engineer-2025.pdf'
+data_dir = Path.cwd() / 'data'
+
 
 # Define the Job model here to avoid circular imports
 from typing import Optional
@@ -58,7 +60,7 @@ def save_jobs(job: Job):
 	Returns:
 		str: Confirmation message
 	"""
-	with open('./data/jobs.csv', 'a', newline='') as f:
+	with open(data_dir / 'jobs.csv', 'a', newline='') as f:
 		writer = csv.writer(f)
 		writer.writerow([job.title, job.company, job.link, job.salary, job.location])
 
@@ -75,7 +77,7 @@ def read_jobs():
 	Returns:
 		str: Contents of the jobs CSV file
 	"""
-	with open('./data/jobs.csv', 'r') as f:
+	with open(data_dir / 'jobs.csv', 'r') as f:
 		return f.read()
 
 
