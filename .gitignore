@@ -8,6 +8,8 @@ wheels/
 
 /data
 *.pdf
+*.gif
+
 # Virtual environments
 .venv
-.env
+.env           
