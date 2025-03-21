@@ -59,7 +59,12 @@ Then install the project dependencies:
 ```bash
 uv sync
 ```
-Create a 
+Create a folder called `data` in the root directory of the project.
+```bash
+mkdir data
+```
+Add your resume/CV pdf to the `data` folder under the name `resume.pdf`.
+
 
 ### 5. Set up OpenRouter API key 🔑 
 
