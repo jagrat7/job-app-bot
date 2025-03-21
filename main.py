@@ -27,7 +27,7 @@ import logging
 # Browser automation imports
 from browser_use import Agent
 from actions import controller
-from config import model, browser
+from config import model, browser, num_of_applications
 
 
 # Configure logging
@@ -59,9 +59,9 @@ async def main():
         "4. For each job listing:\n"
         "   a. Click through the list of jobs to see if it has a quick apply button\n"
         "   b. If the job has a quick apply button, click quick apply button and apply to the job\n"
-        "   c. For multi-step applications, the system will automatically fill out forms using your CV information\n"
+        "   c. For multi-step applications, fill out forms using your CV information and 'Get common application answers' action to fill out questions\n"
         "   d. Close the confirmation dialog and use 'Save job information' action to save the job details\n"
-        "5. Continue this process for at least 3 job listings. Only run 'done' action when you have applied to 3 jobs successfully\n"
+        f"5. Repeat this process for at least {num_of_applications} job listings. Only run 'done' action and quit when you have applied to {num_of_applications} jobs successfully\n"
     )
 
     tasks = [

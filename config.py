@@ -22,6 +22,8 @@ browser = Browser(
 		disable_security=True,  # Disable security features that might block automation
 	)
 )
+# Number of applications to be made
+num_of_applications = 3
 
 # Path to the resume/CV file
 CV = Path.cwd() / 'data' / 'resume.pdf'

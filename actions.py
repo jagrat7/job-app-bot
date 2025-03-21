@@ -2,6 +2,7 @@
 import csv
 import logging
 import asyncio
+import datetime
 from PyPDF2 import PdfReader
 from browser_use import ActionResult, Controller
 from browser_use.browser.context import BrowserContext
@@ -10,20 +11,30 @@ from typing import Optional
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Import utility functions for finding HTML elements
-from utils.html_elements import (
-    find_easy_apply_button,
-    find_next_button,
-    find_review_button,
-    find_submit_button
-)
-
 
 load_dotenv()
 # Configure logging
 logger = logging.getLogger(__name__)
 # Initialize the controller - this registers actions that the AI agent can perform
 controller = Controller()
+
+# Dictionary of common job application questions and answers
+# This can be used by the AI to automatically fill out forms
+COMMON_APPLICATION_ANSWERS = {
+	# Work Authorization
+	"authorized to work": "Yes",
+	"require sponsorship": "Yes",
+	"visa status": "F-1",
+	
+	# Job Preferences
+	"desired salary": "$120,000 - $150,000",
+	"willing to relocate": "Yes",
+	"relocation preferences": "Any",
+	"preferred work location": "Any",
+	"come to office": "Yes",
+	"notice period": "2 weeks",
+	
+}
 
 # Global variable to store the last found Easy Apply button to avoid duplicate searches
 _last_found_easy_apply_button = None
@@ -59,7 +70,9 @@ def _save_job_to_csv(job: Job, append: bool = True):
 	Returns:
 		None
 	"""
-	file_path = data_dir / 'jobs.csv'
+	# Get current timestamp with AM/PM format
+	timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%I-%M-%S_%p")
+	file_path = data_dir / f'jobs_{timestamp}.csv'
 	file_exists = file_path.exists()
 	
 	# Create the data directory if it doesn't exist
@@ -88,21 +101,6 @@ def _save_job_to_csv(job: Job, append: bool = True):
 			'salary': job.salary or '',
 			'status': job.status or 'Saved'
 		})
-
-
-@controller.action('Read jobs from file')
-def read_jobs():
-	"""Read previously saved job listings from the CSV file.
-	
-	This allows the AI to check what jobs have already been saved
-	to avoid duplicates and to reference previously found positions.
-	
-	Returns:
-		str: Contents of the jobs CSV file
-	"""
-	with open(data_dir / 'jobs.csv', 'r') as f:
-		return f.read()
-
 
 @controller.action('Save job information')
 def save_job_information(title: str, company: str, link: str, status: str, fit_score: float = 1.0):
@@ -267,6 +265,19 @@ async def login_to_linkedin(browser: BrowserContext):
 		return ActionResult(error=f'Failed to navigate to LinkedIn login page: {str(e)}')
 
 
+@controller.action('Get common application answers')
+def get_common_application_answers():
+	"""Get a dictionary of common job application questions and answers.
+	
+	This action returns a dictionary of common job application questions and answers
+	that can be used to automatically fill out forms during the application process.
+	
+	Returns:
+		str: JSON string of common application questions and answers
+	"""
+	return str(COMMON_APPLICATION_ANSWERS)
+
+
 @controller.registry.action('Browse LinkedIn jobs', requires_browser=True)
 async def search_linkedin_jobs(browser: BrowserContext):
 	"""Browse recommended jobs on LinkedIn.
@@ -292,3 +303,5 @@ async def search_linkedin_jobs(browser: BrowserContext):
 	except Exception as e:
 		logger.debug(f'Error navigating to LinkedIn jobs: {str(e)}')
 		return ActionResult(error=f'Failed to navigate to LinkedIn jobs: {str(e)}')
+
+
