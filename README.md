@@ -81,6 +81,10 @@ OPENROUTER_API_KEY=your_api_key_here
 
 OpenRouter gives you flexibility to choose from a wide range of models without being locked into a single provider.
 
+### 6. Set up environment variables
+
+Set the model name and other environment variables in the `.env` file, use `env.example` as a template.
+
 ## 🚀 Usage
 
 Run the main script to start the job application process:
