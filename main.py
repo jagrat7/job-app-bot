@@ -1,40 +1,15 @@
-"""
-Find and apply to jobs.
-
-This script automates the process of finding and applying to machine learning internships
-by using an AI agent to browse job sites, search for relevant positions, and save them.
-
-The workflow:
-1. Initialize environment and browser
-2. Define actions the AI agent can perform (read CV, save jobs, etc.)
-3. Create an AI agent with specific tasks
-4. Agent browses job sites and saves relevant positions
-
-@dev You need to add OPENROUTER_API_KEY to your environment variables.
-"""
-
-# Standard library imports
 import os
 from dotenv import load_dotenv
-
-load_dotenv()
 import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import asyncio
 import logging
-
-# Browser automation imports
 from browser_use import Agent
 from actions import controller
 from config import model, browser, num_of_applications
 
-
-# Configure logging
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+load_dotenv()
 logger = logging.getLogger(__name__)
-
-
-# Initialize the browser with security disabled for automation
 
 
 async def main():

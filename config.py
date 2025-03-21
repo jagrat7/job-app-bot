@@ -23,7 +23,7 @@ browser = Browser(
 	)
 )
 # Number of applications to be made
-num_of_applications = 3
+num_of_applications = 20
 
 # Path to the resume/CV file
 CV = Path.cwd() / 'data' / 'resume.pdf'
