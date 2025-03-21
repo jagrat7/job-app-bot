@@ -99,7 +99,7 @@ The bot will:
 3. Search for positions relevant to your cv/resume 🔍
 4. Apply to jobs with Easy Apply functionality ✅
 5. Skip jobs that require multiple steps or don't have Easy Apply ⏭️
-6. Track applied jobs to avoid duplicates 📝
+6. Save successful job applications to a CSV file 📝
 
 ## ⚙️ Configuration
 

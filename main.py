@@ -57,13 +57,11 @@ async def main():
         "2. Use 'Read my cv for context to fill forms' action to understand my background and skills\n"
         "3. Use 'Browse LinkedIn jobs' action to view recommended job listings\n"
         "4. For each job listing:\n"
-        "   a. Click on the job to view details\n"
-        "   b. Use 'Apply to LinkedIn job' action to submit an application\n"
-        "   c. The application will automatically handle both simple and multi-step applications\n"
-        "   d. For multi-step applications, the system will automatically fill out forms using your CV information\n"
-        "   e. Close the confirmation dialog\n"
-        "5. After applying, the job will be automatically saved with 'Applied' or 'Failed' status\n"
-        "6. Continue this process for at least 3 job listings. Only run 'done' when you have applied to 3 jobs successfully\n"
+        "   a. Click through the list of jobs to see if it has a quick apply button\n"
+        "   b. If the job has a quick apply button, click quick apply button and apply to the job\n"
+        "   c. For multi-step applications, the system will automatically fill out forms using your CV information\n"
+        "   d. Close the confirmation dialog and use 'Save job information' action to save the job details\n"
+        "5. Continue this process for at least 3 job listings. Only run 'done' action when you have applied to 3 jobs successfully\n"
     )
 
     tasks = [

@@ -49,6 +49,47 @@ class Job(BaseModel):
     status: Optional[str] = 'Saved'  # Default status is 'Saved'
 
 
+def _save_job_to_csv(job: Job, append: bool = True):
+	"""Save job information to a CSV file.
+	
+	Args:
+		job: Job object to save
+		append: Whether to append to the existing file or create a new one
+	
+	Returns:
+		None
+	"""
+	file_path = data_dir / 'jobs.csv'
+	file_exists = file_path.exists()
+	
+	# Create the data directory if it doesn't exist
+	data_dir.mkdir(parents=True, exist_ok=True)
+	
+	# Define the CSV field names
+	field_names = ['title', 'company', 'link', 'fit_score', 'location', 'salary', 'status']
+	
+	# Open the file in append mode if it exists and append is True, otherwise write mode
+	mode = 'a' if file_exists and append else 'w'
+	
+	with open(file_path, mode, newline='') as f:
+		writer = csv.DictWriter(f, fieldnames=field_names)
+		
+		# Write header if the file is new or we're not appending
+		if not file_exists or not append:
+			writer.writeheader()
+		
+		# Write the job data
+		writer.writerow({
+			'title': job.title,
+			'company': job.company,
+			'link': job.link,
+			'fit_score': job.fit_score,
+			'location': job.location or '',
+			'salary': job.salary or '',
+			'status': job.status or 'Saved'
+		})
+
+
 @controller.action('Read jobs from file')
 def read_jobs():
 	"""Read previously saved job listings from the CSV file.
@@ -61,6 +102,43 @@ def read_jobs():
 	"""
 	with open(data_dir / 'jobs.csv', 'r') as f:
 		return f.read()
+
+
+@controller.action('Save job information')
+def save_job_information(title: str, company: str, link: str, status: str, fit_score: float = 1.0):
+	"""Save information about a job to the jobs.csv file.
+	
+	This action saves details about a job to a CSV file for tracking purposes.
+	
+	Args:
+		title: Job title
+		company: Company name
+		link: URL to the job posting
+		status: Status of the application (e.g., 'Applied', 'Failed')
+		fit_score: How well the job matches the candidate's profile (0-1)
+	
+	Returns:
+		ActionResult: Success message or error information
+	"""
+	try:
+		# Create and save the job
+		job = Job(
+			title=title,
+			company=company.strip() if company else 'Unknown Company',
+			link=link,
+			fit_score=fit_score,
+			status=status
+		)
+		
+		_save_job_to_csv(job)
+		
+		return ActionResult(
+			extracted_content=f"Successfully saved job information for {title} at {company}"
+		)
+		
+	except Exception as e:
+		logger.error(f"Error saving job information: {str(e)}")
+		return ActionResult(error=f"Failed to save job information: {str(e)}")
 
 
 @controller.action('Read my cv for context to fill forms')
@@ -214,191 +292,3 @@ async def search_linkedin_jobs(browser: BrowserContext):
 	except Exception as e:
 		logger.debug(f'Error navigating to LinkedIn jobs: {str(e)}')
 		return ActionResult(error=f'Failed to navigate to LinkedIn jobs: {str(e)}')
-
-
-@controller.registry.action('Apply to LinkedIn job', requires_browser=True)
-async def apply_to_linkedin_job(browser: BrowserContext):
-	"""Apply to the currently open LinkedIn job posting using Easy Apply.
-	
-	This action attempts to apply to the job that is currently open
-	in the browser using LinkedIn's Easy Apply feature.
-	
-	Args:
-		browser: Browser context for interacting with the webpage
-	
-	Returns:
-		ActionResult: Success message with job details or error information
-	"""
-	try:
-		# Check if we're on a job page
-		current_url = await browser.current_url()
-		if 'jobs/view' not in current_url:
-			return ActionResult(error='Not on a LinkedIn job details page')
-		
-		# Get job title and company
-		job_title_elem = await browser.query_selector('h1.t-24.t-bold a')
-		if not job_title_elem:
-			job_title_elem = await browser.query_selector('h1.t-24')
-		company_elem = await browser.query_selector('div.job-details-jobs-unified-top-card__company-name a')
-		if not company_elem:
-			company_elem = await browser.query_selector('a.company-name')
-		
-		job_title = await job_title_elem.text_content() if job_title_elem else 'Unknown Job Title'
-		company = await company_elem.text_content() if company_elem else 'Unknown Company'
-		
-		logger.info(f'Attempting to apply to: {job_title} at {company}')
-		
-		# Check if the job has Easy Apply using the check_quick_apply function
-		quick_apply_result = await check_quick_apply(browser)
-		
-		if quick_apply_result.extracted_content != 'true':
-			# Save the job with Failed status
-			save_jobs(Job(
-				title=job_title,
-				company=company.strip() if company else 'Unknown Company',
-				link=current_url,
-				fit_score=0.5,  # Medium fit score for jobs we couldn't apply to
-				status='Failed - No Easy Apply'
-			))
-			return ActionResult(error='This job does not have Easy Apply option')
-		
-		# Use the Easy Apply button that was already found
-		global _last_found_easy_apply_button  # Declare global variable
-		easy_apply_button = _last_found_easy_apply_button
-		
-		# Click Easy Apply button
-		await easy_apply_button.click()
-		await browser.wait_for_load_state('networkidle')
-		await browser.wait_for_timeout(2000)  # Wait for dialog to fully appear
-		
-		# Check for next button or submit application button
-		next_button = await find_next_button(browser)
-		
-		# Look for review button
-		review_button = await find_review_button(browser)
-		
-		# Look for submit application button
-		submit_button = await find_submit_button(browser)
-		
-		# If there's a review button, click it first
-		if review_button:
-			logger.info('Found review application button - clicking it')
-			await review_button.click()
-			await browser.wait_for_load_state('networkidle')
-			await browser.wait_for_timeout(2000)  # Wait for dialog to update
-			
-			# After review, look for submit button again
-			submit_button = await find_submit_button(browser)
-		
-		# If there's a submit button, click it
-		if submit_button:
-			logger.info('Found submit application button - clicking it')
-			await submit_button.click()
-			await browser.wait_for_load_state('networkidle')
-			await browser.wait_for_timeout(2000)  # Wait for confirmation
-			
-			# Check for success indicators
-			success_element = await browser.query_selector('h2:has-text("Application submitted")')
-			if not success_element:
-				success_element = await browser.query_selector('div:has-text("Your application was sent")')
-			
-			if success_element:
-				# Save the successfully applied job
-				save_jobs(Job(
-					title=job_title,
-					company=company.strip() if company else 'Unknown Company',
-					link=current_url,
-					fit_score=1.0,  # Assuming a good fit since we're applying
-					status='Applied'
-				))
-				return ActionResult(extracted_content=f'Successfully applied to {job_title} at {company.strip() if company else "Unknown Company"}')
-			else:
-				# Save as failed application
-				save_jobs(Job(
-					title=job_title,
-					company=company.strip() if company else 'Unknown Company',
-					link=current_url,
-					fit_score=0.7,  # Higher fit score for jobs we attempted to apply to
-					status='Failed - Submission Error'
-				))
-				return ActionResult(error='Application submission may have failed - no confirmation received')
-		
-		# If there's a next button but no review or submit button, this is a multi-step application
-		elif next_button and not review_button:
-			# Save as failed due to multi-step
-			save_jobs(Job(
-				title=job_title,
-				company=company.strip() if company else 'Unknown Company',
-				link=current_url,
-				fit_score=0.8,  # High fit score for jobs that look promising but need multi-step
-				status='Failed - Multi-step Application'
-			))
-			return ActionResult(error='This job requires a multi-step application which is not supported yet')
-		
-		else:
-			# Save as failed due to unknown issue
-			save_jobs(Job(
-				title=job_title,
-				company=company.strip() if company else 'Unknown Company',
-				link=current_url,
-				fit_score=0.6,  # Medium fit score
-				status='Failed - No Submit Button'
-			))
-			return ActionResult(error='Could not find next or submit buttons in the application')
-		
-	except Exception as e:
-		logger.debug(f'Error applying to LinkedIn job: {str(e)}')
-		
-		# Get job details even in case of exception
-		try:
-			current_url = await browser.current_url()
-			# Save as failed due to exception
-			save_jobs(Job(
-				title=job_title if 'job_title' in locals() else 'Unknown Job',
-				company=company.strip() if 'company' in locals() and company else 'Unknown Company',
-				link=current_url,
-				fit_score=0.4,  # Lower fit score for jobs that caused errors
-				status=f'Failed - Error: {str(e)[:50]}'
-			))
-		except:
-			pass  # If we can't even save the job, just continue
-		
-		return ActionResult(error=f'Failed to apply to LinkedIn job: {str(e)}')
-
-
-
-
-
-@controller.registry.action('Check if job has Quick Apply', requires_browser=True)
-async def check_quick_apply(browser: BrowserContext):
-	"""Check if the currently open job posting has a Quick Apply option.
-	
-	This action checks if the job that is currently open in the browser
-	has LinkedIn's Easy Apply feature available.
-	
-	Args:
-		browser: Browser context for interacting with the webpage
-	
-	Returns:
-		ActionResult: Boolean indicating if Quick Apply is available and the button element
-		            in the metadata field if found
-	"""
-	try:
-		# Declare global variable at the beginning of the function
-		global _last_found_easy_apply_button
-		
-		# Look for Easy Apply button using the helper function
-		easy_apply_button = await find_easy_apply_button(browser)
-		
-		if easy_apply_button:
-			# Store the button in a global variable to avoid finding it again
-			_last_found_easy_apply_button = easy_apply_button
-			return ActionResult(extracted_content='true')
-		else:
-			# Clear the global variable if no button is found
-			_last_found_easy_apply_button = None
-			return ActionResult(extracted_content='false')
-		
-	except Exception as e:
-		logger.debug(f'Error checking for Quick Apply: {str(e)}')
-		return ActionResult(error=f'Failed to check for Quick Apply: {str(e)}')
