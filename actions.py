@@ -1,35 +1,32 @@
 # Standard library imports
 import csv
 import logging
-import os
-from pathlib import Path
-
-# Third-party imports
+import asyncio
 from PyPDF2 import PdfReader
-
-# Browser automation imports
 from browser_use import ActionResult, Controller
 from browser_use.browser.context import BrowserContext
+from config import CV, data_dir
+from typing import Optional
+from pydantic import BaseModel
+from dotenv import load_dotenv
 
+# Import utility functions for finding HTML elements
+from utils.html_elements import (
+    find_easy_apply_button,
+    find_next_button,
+    find_review_button,
+    find_submit_button
+)
+
+
+load_dotenv()
+# Configure logging
+logger = logging.getLogger(__name__)
 # Initialize the controller - this registers actions that the AI agent can perform
 controller = Controller()
 
-# Configure logging
-logger = logging.getLogger(__name__)
-
-# Path to the resume/CV file
-CV = Path.cwd() / 'data' / 'Jagrat Rao-Software Engineer-2025.pdf'
-data_dir = Path.cwd() / 'data'
-from dotenv import load_dotenv
-
-load_dotenv()
-# No longer using LinkedIn credentials from environment variables
-# Using manual login instead
-
-
-# Define the Job model here to avoid circular imports
-from typing import Optional
-from pydantic import BaseModel
+# Global variable to store the last found Easy Apply button to avoid duplicate searches
+_last_found_easy_apply_button = None
 
 class Job(BaseModel):
     """Represents a job listing with relevant details.
@@ -50,39 +47,6 @@ class Job(BaseModel):
     location: Optional[str] = None
     salary: Optional[str] = None
     status: Optional[str] = 'Saved'  # Default status is 'Saved'
-
-
-# Register actions that the AI agent can perform
-@controller.action(
-	'Save jobs to file - with a score how well it fits to my profile', param_model=Job
-)
-def save_jobs(job: Job):
-	"""Save a job listing to the CSV file.
-	
-	This action allows the AI to save job listings it finds to a CSV file
-	for later review by the user.
-	
-	Args:
-		job: Job model containing details about the position
-	
-	Returns:
-		str: Confirmation message
-	"""
-	# Create data directory if it doesn't exist
-	data_dir.mkdir(exist_ok=True)
-	
-	# Create jobs.csv with headers if it doesn't exist
-	if not (data_dir / 'jobs.csv').exists():
-		with open(data_dir / 'jobs.csv', 'w', newline='') as f:
-			writer = csv.writer(f)
-			writer.writerow(['Title', 'Company', 'Link', 'Salary', 'Location', 'Fit Score', 'Status'])
-	
-	# Append the job to the CSV file
-	with open(data_dir / 'jobs.csv', 'a', newline='') as f:
-		writer = csv.writer(f)
-		writer.writerow([job.title, job.company, job.link, job.salary, job.location, job.fit_score, job.status])
-
-	return 'Saved job to file'
 
 
 @controller.action('Read jobs from file')
@@ -173,7 +137,7 @@ async def upload_cv(index: int, browser: BrowserContext):
 		return ActionResult(error=f'Failed to upload file to index {index}')
 
 
-@controller.action('Login to LinkedIn', requires_browser=True)
+@controller.registry.action('Login to LinkedIn', requires_browser=True)
 async def login_to_linkedin(browser: BrowserContext):
 	"""Login to LinkedIn by prompting the user to sign in manually.
 	
@@ -189,87 +153,70 @@ async def login_to_linkedin(browser: BrowserContext):
 	try:
 		# Navigate to LinkedIn login page
 		logger.info('Navigating to LinkedIn login page')
-		await browser.goto('https://www.linkedin.com/login')
-		await browser.wait_for_load_state('networkidle')
-		await browser.wait_for_timeout(3000)  # Wait for page to fully load
+		page = await browser.get_current_page()
+		await page.goto('https://www.linkedin.com/login')
+		await page.wait_for_load_state()
 		
-		# Display a message to the user to sign in manually
-		await browser.evaluate(
-			'''
-			const div = document.createElement('div');
-			div.style.position = 'fixed';
-			div.style.top = '0';
-			div.style.left = '0';
-			div.style.width = '100%';
-			div.style.padding = '20px';
-			div.style.backgroundColor = '#0077b5';
-			div.style.color = 'white';
-			div.style.zIndex = '9999';
-			div.style.textAlign = 'center';
-			div.style.fontSize = '16px';
-			div.innerHTML = '<b>PLEASE SIGN IN TO LINKEDIN</b><br>Enter your email and password manually, then click Sign In';
-			document.body.appendChild(div);
-			'''
-		)
+		# User needs to manually sign in
+		msg = 'Please sign in to LinkedIn manually'
+		logger.info(msg)
 		
-		logger.info('Waiting for user to sign in manually')
-		
-		# Wait for user to manually log in (max 120 seconds)
-		for i in range(24):  # 24 * 5 seconds = 120 seconds max wait time
-			await browser.wait_for_timeout(5000)
-			current_url = await browser.current_url()
+		# Wait for user to manually log in (max 300 seconds = 5 minutes)
+		for i in range(60):  # 60 * 5 seconds = 300 seconds max wait time
+			await asyncio.sleep(5)  # Sleep for 5 seconds
+			page = await browser.get_current_page()
+			current_url = page.url
 			logger.info(f'Waiting for manual login, current URL: {current_url}')
 			
+			# Check if user has logged in by examining the URL
 			if 'feed' in current_url or 'checkpoint' in current_url or 'dashboard' in current_url or 'home' in current_url:
-				logger.info('Manual login successful')
-				return ActionResult(extracted_content='Successfully logged in to LinkedIn')
+				success_msg = '🔒 Successfully logged in to LinkedIn'
+				logger.info(success_msg)
+				return ActionResult(extracted_content=success_msg, include_in_memory=True)
+				
+			# Every 12 iterations (about 1 minute), remind the user to log in
+			if i % 12 == 0 and i > 0:
+				logger.info('Still waiting for manual login. Please complete the login process.')
 		
 		# If we get here, login timed out
-		return ActionResult(error='Manual login timed out. Please try again and sign in within 2 minutes.')
+		return ActionResult(
+			extracted_content="Navigated to LinkedIn login page. Please sign in manually. The login process is taking longer than expected. Please complete the login to continue.",
+			include_in_memory=True
+		)
 		
 	except Exception as e:
-		logger.debug(f'Error during LinkedIn login process: {str(e)}')
-		return ActionResult(error=f'Failed to complete LinkedIn login: {str(e)}')
+		logger.error(f'Error during LinkedIn login process: {str(e)}')
+		return ActionResult(error=f'Failed to navigate to LinkedIn login page: {str(e)}')
 
 
-@controller.action('Search LinkedIn jobs', requires_browser=True)
-async def search_linkedin_jobs(query: str, browser: BrowserContext):
-	"""Search for jobs on LinkedIn based on the given query.
+@controller.registry.action('Browse LinkedIn jobs', requires_browser=True)
+async def search_linkedin_jobs(browser: BrowserContext):
+	"""Browse recommended jobs on LinkedIn.
 	
-	This action navigates to LinkedIn jobs page and performs a search
-	using the provided query string.
+	This action navigates to LinkedIn's recommended jobs page to view job listings.
 	
 	Args:
-		query: Job search query (e.g., "Software Engineer")
 		browser: Browser context for interacting with the webpage
 	
 	Returns:
 		ActionResult: Success message or error information
 	"""
 	try:
-		# Navigate to LinkedIn jobs page
-		await browser.goto('https://www.linkedin.com/jobs/')
-		await browser.wait_for_load_state('networkidle')
+		# Navigate to LinkedIn recommended jobs page
+		page = await browser.get_current_page()
+		await page.goto('https://www.linkedin.com/jobs/collections/recommended')
+		await page.wait_for_load_state()
 		
-		# Input search query
-		search_input = await browser.query_selector('input[aria-label="Search by title, skill, or company"]')
-		if not search_input:
-			search_input = await browser.query_selector('input[placeholder*="Search job titles"]')
-		
-		if search_input:
-			await search_input.fill(query)
-			await search_input.press('Enter')
-			await browser.wait_for_load_state('networkidle')
-			return ActionResult(extracted_content=f'Successfully searched for "{query}" jobs on LinkedIn')
-		else:
-			return ActionResult(error='Could not find job search input field')
+		msg = '🔍 Successfully navigated to LinkedIn recommended jobs'
+		logger.info(msg)
+		return ActionResult(extracted_content=msg, include_in_memory=True)
 		
 	except Exception as e:
-		logger.debug(f'Error searching LinkedIn jobs: {str(e)}')
-		return ActionResult(error=f'Failed to search LinkedIn jobs: {str(e)}')
+		logger.debug(f'Error navigating to LinkedIn jobs: {str(e)}')
+		return ActionResult(error=f'Failed to navigate to LinkedIn jobs: {str(e)}')
 
 
-@controller.action('Apply to LinkedIn job', requires_browser=True)
+@controller.registry.action('Apply to LinkedIn job', requires_browser=True)
 async def apply_to_linkedin_job(browser: BrowserContext):
 	"""Apply to the currently open LinkedIn job posting using Easy Apply.
 	
@@ -289,20 +236,22 @@ async def apply_to_linkedin_job(browser: BrowserContext):
 			return ActionResult(error='Not on a LinkedIn job details page')
 		
 		# Get job title and company
-		job_title_elem = await browser.query_selector('h1.job-title')
-		company_elem = await browser.query_selector('a.company-name')
+		job_title_elem = await browser.query_selector('h1.t-24.t-bold a')
+		if not job_title_elem:
+			job_title_elem = await browser.query_selector('h1.t-24')
+		company_elem = await browser.query_selector('div.job-details-jobs-unified-top-card__company-name a')
+		if not company_elem:
+			company_elem = await browser.query_selector('a.company-name')
 		
 		job_title = await job_title_elem.text_content() if job_title_elem else 'Unknown Job Title'
 		company = await company_elem.text_content() if company_elem else 'Unknown Company'
 		
 		logger.info(f'Attempting to apply to: {job_title} at {company}')
 		
-		# Look for Easy Apply button
-		easy_apply_button = await browser.query_selector('button[data-control-name="easy_apply_btn"]')
-		if not easy_apply_button:
-			easy_apply_button = await browser.query_selector('button:has-text("Easy Apply")')
+		# Check if the job has Easy Apply using the check_quick_apply function
+		quick_apply_result = await check_quick_apply(browser)
 		
-		if not easy_apply_button:
+		if quick_apply_result.extracted_content != 'true':
 			# Save the job with Failed status
 			save_jobs(Job(
 				title=job_title,
@@ -313,16 +262,35 @@ async def apply_to_linkedin_job(browser: BrowserContext):
 			))
 			return ActionResult(error='This job does not have Easy Apply option')
 		
+		# Use the Easy Apply button that was already found
+		global _last_found_easy_apply_button  # Declare global variable
+		easy_apply_button = _last_found_easy_apply_button
+		
 		# Click Easy Apply button
 		await easy_apply_button.click()
 		await browser.wait_for_load_state('networkidle')
 		await browser.wait_for_timeout(2000)  # Wait for dialog to fully appear
 		
 		# Check for next button or submit application button
-		next_button = await browser.query_selector('button:has-text("Next")')
-		submit_button = await browser.query_selector('button:has-text("Submit application")')
+		next_button = await find_next_button(browser)
 		
-		# If there's a submit button right away, click it
+		# Look for review button
+		review_button = await find_review_button(browser)
+		
+		# Look for submit application button
+		submit_button = await find_submit_button(browser)
+		
+		# If there's a review button, click it first
+		if review_button:
+			logger.info('Found review application button - clicking it')
+			await review_button.click()
+			await browser.wait_for_load_state('networkidle')
+			await browser.wait_for_timeout(2000)  # Wait for dialog to update
+			
+			# After review, look for submit button again
+			submit_button = await find_submit_button(browser)
+		
+		# If there's a submit button, click it
 		if submit_button:
 			logger.info('Found submit application button - clicking it')
 			await submit_button.click()
@@ -355,8 +323,8 @@ async def apply_to_linkedin_job(browser: BrowserContext):
 				))
 				return ActionResult(error='Application submission may have failed - no confirmation received')
 		
-		# If there's a next button, this is a multi-step application
-		elif next_button:
+		# If there's a next button but no review or submit button, this is a multi-step application
+		elif next_button and not review_button:
 			# Save as failed due to multi-step
 			save_jobs(Job(
 				title=job_title,
@@ -398,7 +366,10 @@ async def apply_to_linkedin_job(browser: BrowserContext):
 		return ActionResult(error=f'Failed to apply to LinkedIn job: {str(e)}')
 
 
-@controller.action('Check if job has Quick Apply', requires_browser=True)
+
+
+
+@controller.registry.action('Check if job has Quick Apply', requires_browser=True)
 async def check_quick_apply(browser: BrowserContext):
 	"""Check if the currently open job posting has a Quick Apply option.
 	
@@ -409,17 +380,23 @@ async def check_quick_apply(browser: BrowserContext):
 		browser: Browser context for interacting with the webpage
 	
 	Returns:
-		ActionResult: Boolean indicating if Quick Apply is available
+		ActionResult: Boolean indicating if Quick Apply is available and the button element
+		            in the metadata field if found
 	"""
 	try:
-		# Look for Easy Apply button
-		easy_apply_button = await browser.query_selector('button[data-control-name="easy_apply_btn"]')
-		if not easy_apply_button:
-			easy_apply_button = await browser.query_selector('button:has-text("Easy Apply")')
+		# Declare global variable at the beginning of the function
+		global _last_found_easy_apply_button
+		
+		# Look for Easy Apply button using the helper function
+		easy_apply_button = await find_easy_apply_button(browser)
 		
 		if easy_apply_button:
+			# Store the button in a global variable to avoid finding it again
+			_last_found_easy_apply_button = easy_apply_button
 			return ActionResult(extracted_content='true')
 		else:
+			# Clear the global variable if no button is found
+			_last_found_easy_apply_button = None
 			return ActionResult(extracted_content='false')
 		
 	except Exception as e:

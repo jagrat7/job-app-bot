@@ -52,22 +52,21 @@ async def main():
         "You are a professional job finder and applicant. Follow these steps precisely:\n"
         "1. Use 'Login to LinkedIn' action to start the manual login process\n"
         "   - CRITICAL: DO NOT INTERACT with the login form at all! The user will manually enter credentials\n"
-        "   - WAIT until the user completes the login process before proceeding to any other steps\n"
+        "   - WAIT until the user completes the login process before proceeding to any other actions\n"
         "   - The login process may take up to 5 minutes - be patient and do not proceed until login is confirmed\n"
         "2. Use 'Read my cv for context to fill forms' action to understand my background and skills\n"
-        "3. Use 'Search LinkedIn jobs' action with a query based on my skills\n"
+        "3. Use 'Browse LinkedIn jobs' action to view recommended job listings\n"
         "4. For each job listing:\n"
         "   a. Click on the job to view details\n"
-        "   b. Use 'Check if job has Quick Apply' action to verify if it has Easy Apply\n"
-        "   c. If it has Easy Apply, use 'Apply to LinkedIn job' action to submit an application\n"
-        "   d. If the job requires multiple steps, skip it and move to the next one\n"
+        "   b. Use 'Apply to LinkedIn job' action to submit an application\n"
+        "   c. The application will automatically handle both simple and multi-step applications\n"
+        "   d. For multi-step applications, the system will automatically fill out forms using your CV information\n"
+        "   e. Close the confirmation dialog\n"
         "5. After applying, the job will be automatically saved with 'Applied' or 'Failed' status\n"
-        "6. Continue this process for 3 job listings\n"
-        "7. Use 'Read jobs from file' action periodically to check which jobs you've already applied to"
+        "6. Continue this process for at least 3 job listings. Only run 'done' when you have applied to 3 jobs successfully\n"
     )
 
     tasks = [
-        # ground_task + '\n' + 'Amazon',
         linkedin_task,  # LinkedIn job search and application
     ]
 

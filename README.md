@@ -59,7 +59,7 @@ Then install the project dependencies:
 ```bash
 uv sync
 ```
-
+Create a 
 
 ### 5. Set up OpenRouter API key 🔑 
 

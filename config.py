@@ -4,6 +4,7 @@ load_dotenv()
 from pydantic import SecretStr  # For data validation and secure API key handling
 from langchain_openai import ChatOpenAI  # For creating the LLM agent
 from browser_use.browser.browser import Browser, BrowserConfig
+from pathlib import Path
 
 # Initialize the language model using OpenRouter as a proxy to OpenAI
 model = ChatOpenAI(
@@ -21,3 +22,10 @@ browser = Browser(
 		disable_security=True,  # Disable security features that might block automation
 	)
 )
+
+# Path to the resume/CV file
+CV = Path.cwd() / 'data' / 'resume.pdf'
+
+# Path to the data directory
+data_dir = Path.cwd() / 'data'
+
