@@ -1,5 +1,8 @@
 # 🤖 LinkedIn Job Application Bot
 
+### Hackathon related stuff
+![pensar issues](image.png)
+
 ## 🌟 Overview
 This project is an application of the **[usebrowse](https://github.com/browser-use/browser-use)** library. It creates an automated LinkedIn job application bot powered by AI agents that helps users find and apply to  positions based on your CV/resume on LinkedIn using the Easy Apply feature.
 
