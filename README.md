@@ -1,12 +1,12 @@
 # 🤖 LinkedIn Job Application Bot
 
 ## 🌟 Overview
-This project is an application of the **[usebrowse](https://github.com/browser-use/browser-use)** library. It creates an automated LinkedIn job application bot powered by AI agents that helps users find and apply to  positions based on your CV/resume on LinkedIn using the Easy Apply feature.
+This project creates an automated LinkedIn job application bot powered by AI agents that helps users find and apply to  positions based on your CV/resume on LinkedIn using the Easy Apply feature.
 
 > 🚧 **Note:** This project is still a work in progress. Features and functionality may change as development continues. Contributions and feedback are welcome! 🚧
 
 ## ✨ Features
-- **Powered by usebrowse**: Built on the powerful usebrowse library for browser automation and AI agent integration
+- **Powered by usebrowse**: Built on **[usebrowse](https://github.com/browser-use/browser-use)** library for browser automation and AI agent integration
 - **Manual LinkedIn Authentication**: Securely log in to LinkedIn with manual credential entry
 - **Automated Job Search**: Searches specifically for Software Engineer positions
 - **Automated Application Submission**: Completes and submits Easy Apply applications
