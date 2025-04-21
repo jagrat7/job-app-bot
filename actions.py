@@ -60,6 +60,9 @@ class Job(BaseModel):
     status: Optional[str] = 'Saved'  # Default status is 'Saved'
 
 
+# Module-level variable to store the CSV file path for this run
+csv_file_path = None
+
 def _save_job_to_csv(job: Job, append: bool = True):
 	"""Save job information to a CSV file.
 	
@@ -70,9 +73,11 @@ def _save_job_to_csv(job: Job, append: bool = True):
 	Returns:
 		None
 	"""
-	# Get current timestamp with AM/PM format
-	timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%I-%M-%S_%p")
-	file_path = data_dir / f'jobs_{timestamp}.csv'
+	global csv_file_path
+	if not csv_file_path:
+		timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%I-%M-%S_%p")
+		csv_file_path = data_dir / f'jobs_{timestamp}.csv'
+	file_path = csv_file_path
 	file_exists = file_path.exists()
 	
 	# Create the data directory if it doesn't exist
@@ -293,7 +298,8 @@ async def search_linkedin_jobs(browser: BrowserContext):
 	try:
 		# Navigate to LinkedIn recommended jobs page
 		page = await browser.get_current_page()
-		await page.goto('https://www.linkedin.com/jobs/collections/recommended')
+		# await page.goto('https://www.linkedin.com/jobs/collections/recommended')
+		await page.goto('https://www.linkedin.com/jobs/collections/easy-apply/')
 		await page.wait_for_load_state()
 		
 		msg = '🔍 Successfully navigated to LinkedIn recommended jobs'

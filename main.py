@@ -32,9 +32,10 @@ async def main():
         "2. Use 'Read my cv for context to fill forms' action to understand my background and skills\n"
         "3. Use 'Browse LinkedIn jobs' action to view recommended job listings\n"
         "4. For each job listing:\n"
-        "   a. Click through the list of jobs to see if it has a quick apply button\n"
-        "   b. If the job has a quick apply button, click quick apply button and apply to the job\n"
-        "   c. For multi-step applications, fill out forms using your CV information and 'Get common application answers' action to fill out questions\n"
+        "   a. Click/scroll down through the list of jobs to see if it has a quick apply button. You may have to scroll down on the list and navigate to the next page to see more jobs with quick apply.\n"
+        # "   b. Only if the job has a quick apply button, click *quick apply* button and apply to the job. Otherwise, skip this job.\n"
+        "   b. For multi-step applications, fill out forms using your CV information and 'Get common application answers' action to fill out questions. However if an input field is already filled, skip it.\n"
+        "   c. Uncheck 'Follow company to stay up to date with their page.' before submitting the application. You may have to scroll down on the dialog to find this option and the submit button.\n"
         "   d. Close the confirmation dialog and use 'Save job information' action to save the job details\n"
         f"5. Repeat this process for at least {num_of_applications} job listings. Only run 'done' action and quit when you have applied to {num_of_applications} jobs successfully\n"
     )
