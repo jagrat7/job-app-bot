@@ -37,7 +37,9 @@ async def main():
         "   b. For multi-step applications, fill out forms using your CV information and 'Get common application answers' action to fill out questions. However if an input field is already filled, skip it.\n"
         "   c. Uncheck 'Follow company to stay up to date with their page.' before submitting the application. You may have to scroll down on the dialog to find this option and the submit button.\n"
         "   d. Close the confirmation dialog and use 'Save job information' action to save the job details\n"
-        f"5. Repeat this process for at least {num_of_applications} job listings. Only run 'done' action and quit when you have applied to {num_of_applications} jobs successfully\n"
+        # f"5. Repeat this process for at least {num_of_applications} job listings. Only run 'done' action and quit when you have applied to {num_of_applications} jobs successfully\n"
+        f"5. Repeat this process indefinitely until the user runs 'done' action and quits the program\n"
+
     )
 
     tasks = [

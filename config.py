@@ -14,7 +14,7 @@ cache = InMemoryCache()
 # Initialize the language model
 model = ChatOpenAI(
     # model='gpt-4.1-2025-04-14',
-    model='anthropic/claude-3.7-sonnet',
+    model='google/gemini-2.5-pro',
     base_url = "https://openrouter.ai/api/v1",  # OpenRouter API endpoint
     default_headers = {
         "HTTP-Referer": "https://www.usemynt.com/",
