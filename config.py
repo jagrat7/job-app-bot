@@ -7,7 +7,7 @@ from browser_use.browser.browser import Browser, BrowserConfig
 from pathlib import Path
 from langchain_core.caches import InMemoryCache  # Import for caching
 
-# Initialize the language model using OpenRouter as a proxy to OpenAI
+# Initialize the language model using Vercel AI Gateway
 # Setup in-memory cache for prompt caching
 cache = InMemoryCache()
 
@@ -15,12 +15,8 @@ cache = InMemoryCache()
 model = ChatOpenAI(
     # model='gpt-4.1-2025-04-14',
     model='google/gemini-2.5-pro',
-    base_url = "https://openrouter.ai/api/v1",  # OpenRouter API endpoint
-    default_headers = {
-        "HTTP-Referer": "https://www.usemynt.com/",
-        "X-Title": "Mynt"
-    },
-    api_key=SecretStr(os.getenv('OPENROUTER_API_KEY', '')),  # API key from environment variables
+    base_url = "https://ai-gateway.vercel.sh/v1",  # Vercel AI Gateway endpoint
+    api_key=SecretStr(os.getenv('AI_GATEWAY_API_KEY')),  # API key from environment variables
     # api_key=SecretStr(os.getenv('OPENAI_API_KEY', '')),  # API key from environment variables
     cache=cache  # Use our custom cache implementation
 )
